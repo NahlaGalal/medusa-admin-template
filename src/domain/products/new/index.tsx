@@ -10,9 +10,8 @@ import FocusModal from "../../../components/molecules/modal/focus-modal"
 import Accordion from "../../../components/organisms/accordion"
 import { useFeatureFlag } from "../../../context/feature-flag"
 import useNotification from "../../../hooks/use-notification"
-import { FormImage, ProductStatus } from "../../../types/shared"
+import { ProductStatus } from "../../../types/shared"
 import { getErrorMessage } from "../../../utils/error-messages"
-import { prepareImages } from "../../../utils/images"
 import { nestedForm } from "../../../utils/nested-form"
 import CustomsForm, { CustomsFormType } from "../components/customs-form"
 import DimensionsForm, {
@@ -78,7 +77,7 @@ const NewProduct = ({ onClose }: Props) => {
 
   useEffect(() => {
     reset(createBlank())
-  }, [])
+  }, [reset])
 
   const { isFeatureEnabled } = useFeatureFlag()
 
@@ -89,56 +88,6 @@ const NewProduct = ({ onClose }: Props) => {
         publish,
         isFeatureEnabled("sales_channels")
       )
-
-      if (data.media?.images?.length) {
-        let preppedImages: FormImage[] = []
-
-        try {
-          preppedImages = await prepareImages(data.media.images)
-        } catch (error) {
-          let errorMessage =
-            "Something went wrong while trying to upload images."
-          const response = (error as any).response as Response
-
-          if (response.status === 500) {
-            errorMessage =
-              errorMessage +
-              " " +
-              "You might not have a file service configured. Please contact your administrator"
-          }
-
-          notification("Error", errorMessage, "error")
-          return
-        }
-        const urls = preppedImages.map((image) => image.url)
-
-        payload.images = urls
-      }
-
-      if (data.thumbnail?.images?.length) {
-        let preppedImages: FormImage[] = []
-
-        try {
-          preppedImages = await prepareImages(data.thumbnail.images)
-        } catch (error) {
-          let errorMessage =
-            "Something went wrong while trying to upload the thumbnail."
-          const response = (error as any).response as Response
-
-          if (response.status === 500) {
-            errorMessage =
-              errorMessage +
-              " " +
-              "You might not have a file service configured. Please contact your administrator"
-          }
-
-          notification("Error", errorMessage, "error")
-          return
-        }
-        const urls = preppedImages.map((image) => image.url)
-
-        payload.thumbnail = urls[0]
-      }
 
       mutate(payload, {
         onSuccess: ({ product }) => {
@@ -331,6 +280,8 @@ const createPayload = (
       origin_country: v.customs.origin_country?.value || undefined,
       manage_inventory: v.stock.manage_inventory,
     })),
+    thumbnail: data.thumbnail.thumbnail,
+    images: data.media.images.map((img) => img.url),
     // @ts-ignore
     status: publish ? ProductStatus.PUBLISHED : ProductStatus.DRAFT,
   }
@@ -379,7 +330,7 @@ const createBlank = (): NewProductForm => {
       channels: [],
     },
     thumbnail: {
-      images: [],
+      thumbnail: "",
     },
     variants: {
       entries: [],

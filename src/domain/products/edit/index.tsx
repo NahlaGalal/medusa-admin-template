@@ -17,13 +17,9 @@ const Edit = () => {
   const { product, status, error } = useAdminProduct(id || "")
 
   if (error) {
-    let message = "An unknown error occurred"
-
     const errorStatus = getErrorStatus(error)
 
     if (errorStatus) {
-      message = errorStatus.message
-
       // If the product is not found, redirect to the 404 page
       if (errorStatus.status === 404) {
         navigate("/404")

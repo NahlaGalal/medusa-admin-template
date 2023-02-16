@@ -3,9 +3,6 @@ import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import Button from "../../../../../components/fundamentals/button"
 import Modal from "../../../../../components/molecules/modal"
-import useNotification from "../../../../../hooks/use-notification"
-import { FormImage } from "../../../../../types/shared"
-import { prepareImages } from "../../../../../utils/images"
 import { nestedForm } from "../../../../../utils/nested-form"
 import MediaForm, { MediaFormType } from "../../../components/media-form"
 import useEditProductActions from "../../hooks/use-edit-product-actions"
@@ -21,7 +18,7 @@ type MediaFormWrapper = {
 }
 
 const MediaModal = ({ product, open, onClose }: Props) => {
-  const { onUpdate, updating } = useEditProductActions(product.id)
+  const { updating, onUpdate } = useEditProductActions(product.id)
   const form = useForm<MediaFormWrapper>({
     defaultValues: getDefaultValues(product),
   })
@@ -32,11 +29,9 @@ const MediaModal = ({ product, open, onClose }: Props) => {
     reset,
   } = form
 
-  const notification = useNotification()
-
   useEffect(() => {
     reset(getDefaultValues(product))
-  }, [product])
+  }, [product, reset])
 
   const onReset = () => {
     reset(getDefaultValues(product))
@@ -44,29 +39,11 @@ const MediaModal = ({ product, open, onClose }: Props) => {
   }
 
   const onSubmit = handleSubmit(async (data) => {
-    let preppedImages: FormImage[] = []
-
-    try {
-      preppedImages = await prepareImages(data.media.images)
-    } catch (error) {
-      let errorMessage = "Something went wrong while trying to upload images."
-      const response = (error as any).response as Response
-
-      if (response.status === 500) {
-        errorMessage =
-          errorMessage +
-          " " +
-          "You might not have a file service configured. Please contact your administrator"
-      }
-
-      notification("Error", errorMessage, "error")
-      return
-    }
-    const urls = preppedImages.map((image) => image.url)
+    const { images } = data.media
 
     onUpdate(
       {
-        images: urls,
+        images: images.map((img) => img.url),
       },
       onReset
     )

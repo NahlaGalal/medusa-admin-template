@@ -3,9 +3,6 @@ import React, { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import Button from "../../../../../components/fundamentals/button"
 import Modal from "../../../../../components/molecules/modal"
-import useNotification from "../../../../../hooks/use-notification"
-import { FormImage } from "../../../../../types/shared"
-import { prepareImages } from "../../../../../utils/images"
 import { nestedForm } from "../../../../../utils/nested-form"
 import ThumbnailForm, {
   ThumbnailFormType,
@@ -34,11 +31,9 @@ const ThumbnailModal = ({ product, open, onClose }: Props) => {
     reset,
   } = form
 
-  const notification = useNotification()
-
   useEffect(() => {
     reset(getDefaultValues(product))
-  }, [product])
+  }, [product, reset])
 
   const onReset = () => {
     reset(getDefaultValues(product))
@@ -46,34 +41,9 @@ const ThumbnailModal = ({ product, open, onClose }: Props) => {
   }
 
   const onSubmit = handleSubmit(async (data) => {
-    let preppedImages: FormImage[] = []
+    const { thumbnail } = data.thumbnail
 
-    try {
-      preppedImages = await prepareImages(data.thumbnail.images)
-    } catch (error) {
-      let errorMessage =
-        "Something went wrong while trying to upload the thumbnail."
-      const response = (error as any).response as Response
-
-      if (response.status === 500) {
-        errorMessage =
-          errorMessage +
-          " " +
-          "You might not have a file service configured. Please contact your administrator"
-      }
-
-      notification("Error", errorMessage, "error")
-      return
-    }
-    const url = preppedImages?.[0]?.url
-
-    onUpdate(
-      {
-        // @ts-ignore
-        thumbnail: url || null,
-      },
-      onReset
-    )
+    onUpdate({ thumbnail }, onReset)
   })
 
   return (
@@ -120,15 +90,7 @@ const ThumbnailModal = ({ product, open, onClose }: Props) => {
 
 const getDefaultValues = (product: Product): ThumbnailFormWrapper => {
   return {
-    thumbnail: {
-      images: product.thumbnail
-        ? [
-            {
-              url: product.thumbnail,
-            },
-          ]
-        : [],
-    },
+    thumbnail: { thumbnail: product.thumbnail || "" },
   }
 }
 
